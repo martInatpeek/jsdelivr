@@ -1,4 +1,12 @@
-export default async function e(){let e=this.callPeekExtensionsAPI("invokeLookup","extensions/extension-handler");await e.dynamicallyImportLocalWebComponents({type:"web-component"});let t=this.callPeekExtensionsAPI("invokeLookup","shopping-cart"),n=document.createElement("style");n.textContent=`
+export default async function run() {
+    const extensionHandler = this.callPeekExtensionsAPI('invokeLookup', 'extensions/extension-handler');
+    await extensionHandler.dynamicallyImportLocalWebComponents({
+        type: 'web-component'
+    });
+    const shoppingCartService = this.callPeekExtensionsAPI('invokeLookup', 'shopping-cart');
+    // Add this once globally (not inside the shadowRoot)
+    const globalStyle = document.createElement('style');
+    globalStyle.textContent = `
     .announcements-ext-scrollable-content {
       max-height: 150px;
       overflow-y: auto;
@@ -11,7 +19,263 @@ export default async function e(){let e=this.callPeekExtensionsAPI("invokeLookup
       border-radius: 50%;
       margin: 1rem auto;
     }
-  `,document.head.appendChild(n);let o=null,a={},l=()=>"32594d8f-3f95-4607-8024-52e610a44b49",i=()=>{let e=moment().format("YYYY-MM-DD"),n=moment().add(1,"month").format("YYYY-MM-DD");return t.purchaseExt&&(t.purchaseExt.get("browsingStartDate")&&(e=t.purchaseExt.get("browsingStartDate")),t.purchaseExt.get("browsingEndDate")&&(n=t.purchaseExt.get("browsingEndDate"))),{startDate:e,endDate:n}},s=()=>{let e=document.querySelectorAll("[data-test-calendar-month-day]");e.forEach(e=>{let t=e.querySelector(".announcement-indicator");t&&t.remove()})},c=e=>{s(),Object.keys(e).forEach(e=>{let t=document.querySelector(`[data-test-calendar-month-day="${e}"]`);if(t){let n=document.createElement("div");n.className="announcement-indicator",n.style.width="7px",n.style.height="7px",n.style.borderRadius="50%",n.style.backgroundColor="rgb(59 130 246)",n.style.position="absolute",n.style.top="5px",n.style.right="5px","static"===window.getComputedStyle(t).position&&(t.style.position="relative"),t.appendChild(n)}})},r=(e=!1,t)=>{let n=l(),{startDate:s,endDate:c}=i();if(o&&o.activityId===n&&o.startDate===s&&o.endDate===c){console.log("[Extension code]: Using cached announcements data"),e&&Object.keys(a).length>0&&u(a,t);return}o={activityId:n,startDate:s,endDate:c},d(n,s,c,e)};function d(e,t,n,o=!1){console.log(`[Extension code]: Fetching announcements for activity ${e} from ${t} to ${n}`);let l=`/services/labs/booking-flow-announcements/peek-pro/api/announcements?activity_ids=${e}&start_date=${t}&end_date=${n}`;fetch(l,{method:"GET",headers:{"Content-Type":"application/json","X-Peek-Auth":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJKb2tlbiIsImN1cnJlbnRfdXNlcl9lbWFpbCI6bnVsbCwiY3VycmVudF91c2VyX2lkIjpudWxsLCJjdXJyZW50X3VzZXJfaXNfcGVla19hZG1pbiI6bnVsbCwiY3VycmVudF91c2VyX25hbWUiOiJob29rIiwiY3VycmVudF91c2VyX3ByaW1hcnlfcm9sZSI6bnVsbCwiZXhwIjoxNzQ4MjU1NTk3LCJpYXQiOjE3NDcxNDU1MzcsImlzcyI6InBlZWtfYXBwX3NkayIsImp0aSI6IjMwdmhuNzAxcXJoODB0MTJwazAwMDFuMSIsIm5iZiI6MTc0NzE0NTUzNywic3ViIjoiZmM2NjBiZTEtMWIyMC00MDJhLThhZjktMWVkOWI5MTQwYzY0In0.rvmDRL9A1UNArcrCMudHQlki_e8_GigDtRczWk492lQ"}}).then(e=>{if(!e.ok)throw Error(`HTTP error! Status: ${e.status}`);return e.json()}).then(e=>{if(console.log("[Extension code]: Announcements data received:",e),e&&Array.isArray(e)){let t={};e.forEach(e=>{e.dates.forEach(n=>{t[n]||(t[n]=[]),t[n].push(e)})}),console.log("[Extension code]: Organized announcements by date:",t),a=t,c(t),o&&u(t)}else console.error("[Extension code]: Invalid announcements data format")}).catch(e=>{console.error("[Extension code]: Error fetching announcements:",e)})}this.subscribeToAppEvent("CalendarComponent.selectedPurchaseDate.update",e=>{console.log("[Extension code]: Announcements - selectedPurchaseDate on Ember",e);let n=t.purchaseExt.get("date");console.log("[Extension code]: Selected purchase date",n),r(!0,n)}),this.subscribeToAppEvent("CalendarComponent.hasAvailability.update",e=>{console.log("[Extension code]: Announcements - hasAvailability on Ember",e),r(!1)}),this.subscribeToAppEvent("ActivitySlotListComponent.activitySlotDates.update",e=>{if(console.log("[Extension code]: Announcements - date changed on Ember",e,e.data.value),e?.data?.value?.length>0){let t=e.data.value.map(e=>e.templateDate),n=t[0]||moment().format("YYYY-MM-DD"),o=t[t.length-1]||moment().add(1,"month").format("YYYY-MM-DD"),a=l();d(a,n,o,!0)}});let u=(e,t)=>{let n=Object.keys(e);if(0===n.length){console.log("[Extension code]: No announcements found for the selected dates");return}let o=document.querySelectorAll("[data-activity-slot-list]");console.log(`[Extension code]: Found ${o.length} slot elements`),n.forEach(n=>{if(t&&n!==t)return;let o=e[n],a="[data-ember-extension-end-calendar-placeholder]";t||(a=`[data-activity-slot-list="${n}"]`),console.log("[Extension code]: Selector",a);let l=document.querySelectorAll(a);l.length>0?(console.log(`[Extension code]: Found ${l.length} matching elements for date ${n}`),l.forEach(e=>{let t=e.querySelector("[data-test-extension-announcement]");t&&t.remove();let a=moment(n).format("MMM D");(function e(t,n,o){let a=document.createElement("div");a.style.margin="1rem",a.setAttribute("data-test-extension-announcement","");let l=o.map(e=>"<b>"+n+"</b>: "+markdown.toHTML(e.body)).join('<div class="announcements-ext-dot-separator"></div>'),i=document.createElement("il-product-card");i.setAttribute("data-extension-web-component","il-product-card"),i.isSelected=!0;let s=document.createElement("div");s.className="announcements-ext-scrollable-content",s.innerHTML=l,i.appendChild(s),a.appendChild(i),t.appendChild(a);let c=i.shadowRoot,r=document.createElement("style");r.textContent=` .il-product-card {
+  `;
+    document.head.appendChild(globalStyle);
+    // Cache for the last request parameters to avoid duplicate requests
+    let lastRequestParams = null;
+    // Store announcements data for reuse
+    let cachedAnnouncementsByDate = {};
+    // Helper function to get activity ID from program configuration
+    const getActivityId = () => {
+        // temporary return hardcoded activity id
+        return '32594d8f-3f95-4607-8024-52e610a44b49';
+        if (shoppingCartService.programConfigurationExt) {
+            const programConfiguration = shoppingCartService.programConfigurationExt;
+            if (programConfiguration.get('activity') && programConfiguration.get('activity.id')) {
+                return programConfiguration.get('activity.id');
+            }
+            if (programConfiguration.get('isProductFeed') && programConfiguration.get('programConfigurationActivities')) {
+                const activityIds = programConfiguration.get('programConfigurationActivities').map((programConf) => {
+                    return programConf.get('activity.id');
+                });
+                if (activityIds && activityIds.length > 0) {
+                    return activityIds[0];
+                }
+            }
+        }
+        // Default activity ID if none found
+        return '32594d8f-3f95-4607-8024-52e610a44b49';
+    };
+    // Helper function to get browsing dates from purchase extension
+    const getBrowsingDates = () => {
+        let startDate = moment().format('YYYY-MM-DD');
+        let endDate = moment().add(1, 'month').format('YYYY-MM-DD');
+        if (shoppingCartService.purchaseExt) {
+            if (shoppingCartService.purchaseExt.get('browsingStartDate')) {
+                startDate = shoppingCartService.purchaseExt.get('browsingStartDate');
+            }
+            if (shoppingCartService.purchaseExt.get('browsingEndDate')) {
+                endDate = shoppingCartService.purchaseExt.get('browsingEndDate');
+            }
+        }
+        return { startDate, endDate };
+    };
+    // Helper function to clear all announcement indicators
+    const clearAnnouncementIndicators = () => {
+        const calendarDays = document.querySelectorAll('[data-test-calendar-month-day]');
+        calendarDays.forEach(day => {
+            const indicator = day.querySelector('.announcement-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        });
+    };
+    // Helper function to add announcement indicators to calendar days
+    const addAnnouncementIndicators = (announcementsByDate) => {
+        clearAnnouncementIndicators();
+        // Add indicators for dates with announcements
+        Object.keys(announcementsByDate).forEach(date => {
+            const calendarDay = document.querySelector(`[data-test-calendar-month-day="${date}"]`);
+            if (calendarDay) {
+                const indicator = document.createElement('div');
+                indicator.className = 'announcement-indicator';
+                indicator.style.width = '7px';
+                indicator.style.height = '7px';
+                indicator.style.borderRadius = '50%';
+                indicator.style.backgroundColor = 'rgb(59 130 246)';
+                indicator.style.position = 'absolute';
+                indicator.style.top = '5px';
+                indicator.style.right = '5px';
+                // Make sure the calendar day has position relative for absolute positioning
+                if (window.getComputedStyle(calendarDay).position === 'static') {
+                    calendarDay.style.position = 'relative';
+                }
+                calendarDay.appendChild(indicator);
+            }
+        });
+    };
+    // Common function to fetch and process announcements
+    const fetchAndProcessAnnouncements = (shouldDisplayCard = false, selectedDate) => {
+        const activityId = getActivityId();
+        const { startDate, endDate } = getBrowsingDates();
+        // Check if we already made this request
+        if (lastRequestParams &&
+            lastRequestParams.activityId === activityId &&
+            lastRequestParams.startDate === startDate &&
+            lastRequestParams.endDate === endDate) {
+            console.log('[Extension code]: Using cached announcements data');
+            // If we need to display the card and we have cached data
+            if (shouldDisplayCard && Object.keys(cachedAnnouncementsByDate).length > 0) {
+                displayAnnouncements(cachedAnnouncementsByDate, selectedDate);
+            }
+            return;
+        }
+        // Update last request params
+        lastRequestParams = { activityId, startDate, endDate };
+        // Fetch announcements
+        fetchAnnouncements(activityId, startDate, endDate, shouldDisplayCard);
+    };
+    // Subscribe to selected purchase date updates
+    this.subscribeToAppEvent('CalendarComponent.selectedPurchaseDate.update', (event) => {
+        console.log('[Extension code]: Announcements - selectedPurchaseDate on Ember', event);
+        // Get the date from the purchase extension
+        const date = shoppingCartService.purchaseExt.get('date');
+        console.log('[Extension code]: Selected purchase date', date);
+        // Fetch and display announcements with card
+        fetchAndProcessAnnouncements(true, date);
+    });
+    // Subscribe to availability updates
+    this.subscribeToAppEvent('CalendarComponent.hasAvailability.update', (event) => {
+        console.log('[Extension code]: Announcements - hasAvailability on Ember', event);
+        // Fetch announcements but don't display card, just update indicators
+        fetchAndProcessAnnouncements(false);
+    });
+    // Subscribe to date-change events on ember
+    this.subscribeToAppEvent('ActivitySlotListComponent.activitySlotDates.update', (event) => {
+        console.log('[Extension code]: Announcements - date changed on Ember', event, event.data.value);
+        if (event?.data?.value?.length > 0) {
+            // Get the selected dates from the event
+            const selectedDates = event.data.value.map(date => date.templateDate);
+            // Format dates for the API (YYYY-MM-DD)
+            const startDate = selectedDates[0] || moment().format('YYYY-MM-DD');
+            const endDate = selectedDates[selectedDates.length - 1] || moment().add(1, 'month').format('YYYY-MM-DD');
+            // Get the activity ID
+            const activityId = getActivityId();
+            // Fetch announcements
+            fetchAnnouncements(activityId, startDate, endDate, true);
+        }
+    });
+    /**
+     * Fetch announcements from the API
+     * @param activityId The activity ID to fetch announcements for
+     * @param startDate The start date in YYYY-MM-DD format
+     * @param endDate The end date in YYYY-MM-DD format
+     * @param shouldDisplayCard Whether to display announcement cards or just add indicators
+     */
+    function fetchAnnouncements(activityId, startDate, endDate, shouldDisplayCard = false) {
+        console.log(`[Extension code]: Fetching announcements for activity ${activityId} from ${startDate} to ${endDate}`);
+        // Use the labs proxy to make the request
+        const url = `/services/labs/booking-flow-announcements/peek-pro/api/announcements?activity_ids=${activityId}&start_date=${startDate}&end_date=${endDate}`;
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Peek-Auth': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJKb2tlbiIsImN1cnJlbnRfdXNlcl9lbWFpbCI6bnVsbCwiY3VycmVudF91c2VyX2lkIjpudWxsLCJjdXJyZW50X3VzZXJfaXNfcGVla19hZG1pbiI6bnVsbCwiY3VycmVudF91c2VyX25hbWUiOiJob29rIiwiY3VycmVudF91c2VyX3ByaW1hcnlfcm9sZSI6bnVsbCwiZXhwIjoxNzQ4MjU1NTk3LCJpYXQiOjE3NDcxNDU1MzcsImlzcyI6InBlZWtfYXBwX3NkayIsImp0aSI6IjMwdmhuNzAxcXJoODB0MTJwazAwMDFuMSIsIm5iZiI6MTc0NzE0NTUzNywic3ViIjoiZmM2NjBiZTEtMWIyMC00MDJhLThhZjktMWVkOWI5MTQwYzY0In0.rvmDRL9A1UNArcrCMudHQlki_e8_GigDtRczWk492lQ'
+            }
+        })
+            .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+            .then(data => {
+            console.log('[Extension code]: Announcements data received:', data);
+            // Process the announcements
+            if (data && Array.isArray(data)) {
+                // Organize announcements by date
+                const announcementsByDate = {};
+                data.forEach((announcement) => {
+                    // Each announcement can have multiple dates
+                    announcement.dates.forEach(date => {
+                        if (!announcementsByDate[date]) {
+                            announcementsByDate[date] = [];
+                        }
+                        announcementsByDate[date].push(announcement);
+                    });
+                });
+                // Log the organized announcements
+                console.log('[Extension code]: Organized announcements by date:', announcementsByDate);
+                // Cache the announcements data for reuse
+                cachedAnnouncementsByDate = announcementsByDate;
+                // Add blue dot indicators to calendar days with announcements
+                addAnnouncementIndicators(announcementsByDate);
+                // Display the announcements cards only if requested
+                if (shouldDisplayCard) {
+                    displayAnnouncements(announcementsByDate);
+                }
+            }
+            else {
+                console.error('[Extension code]: Invalid announcements data format');
+            }
+        })
+            .catch(error => {
+            console.error('[Extension code]: Error fetching announcements:', error);
+        });
+    }
+    /**
+     * Display announcements in the UI
+     * @param announcementsByDate Announcements organized by date
+     */
+    const displayAnnouncements = (announcementsByDate, selectedDate) => {
+        // Check if we have any announcements
+        const dates = Object.keys(announcementsByDate);
+        if (dates.length === 0) {
+            console.log('[Extension code]: No announcements found for the selected dates');
+            return;
+        }
+        // Find all elements with data-activity-slot-list attributes
+        const slotElements = document.querySelectorAll('[data-activity-slot-list]');
+        console.log(`[Extension code]: Found ${slotElements.length} slot elements`);
+        // Process each date with announcements
+        dates.forEach(date => {
+            // if a selectedDate is provided we are in a calendar type booking flow, only do it once
+            if (selectedDate && date !== selectedDate) {
+                return;
+            }
+            const announcements = announcementsByDate[date];
+            let selector = '[data-ember-extension-end-calendar-placeholder]';
+            if (!selectedDate) {
+                selector = `[data-activity-slot-list="${date}"]`;
+            }
+            console.log('[Extension code]: Selector', selector);
+            const matchingSlotElements = document.querySelectorAll(selector);
+            if (matchingSlotElements.length > 0) {
+                console.log(`[Extension code]: Found ${matchingSlotElements.length} matching elements for date ${date}`);
+                // Add announcement cards to each matching element
+                matchingSlotElements.forEach(slotElement => {
+                    // Remove any existing announcements for this slot
+                    const existingAnnouncement = slotElement.querySelector('[data-test-extension-announcement]');
+                    if (existingAnnouncement) {
+                        existingAnnouncement.remove();
+                    }
+                    // Create and add the announcement card
+                    const formattedDate = moment(date).format('MMM D');
+                    createAnnouncementCard(slotElement, formattedDate, announcements);
+                });
+            }
+            else {
+                console.log(`[Extension code]: No matching slot element found for date ${date}`);
+            }
+        });
+    };
+    /**
+     * Create a product card for announcements
+     * @param container The container to add the card to
+     * @param announcements The announcements for this date
+     */
+    function createAnnouncementCard(container, formattedDate, announcements) {
+        const cardWrapper = document.createElement('div');
+        cardWrapper.style.margin = '1rem';
+        cardWrapper.setAttribute('data-test-extension-announcement', '');
+        const htmlContent = announcements.map(a => '<b>' + formattedDate + '</b>: ' + markdown.toHTML(a.body)).join('<div class="announcements-ext-dot-separator"></div>');
+        const card = document.createElement('il-product-card');
+        card.setAttribute('data-extension-web-component', 'il-product-card');
+        card.isSelected = true;
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'announcements-ext-scrollable-content';
+        contentWrapper.innerHTML = htmlContent;
+        card.appendChild(contentWrapper);
+        cardWrapper.appendChild(card);
+        container.appendChild(cardWrapper);
+        const shadow = card.shadowRoot;
+        const style = document.createElement('style');
+        style.textContent =
+            ` .il-product-card {
         background: #F0F9FF !important;
       }
-      `,c.appendChild(r)})(e,a,o)})):console.log(`[Extension code]: No matching slot element found for date ${n}`)})}};
+      `;
+        shadow.appendChild(style);
+    }
+}
+//# sourceMappingURL=index.js.map
